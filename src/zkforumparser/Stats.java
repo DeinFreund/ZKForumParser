@@ -157,7 +157,7 @@ public class Stats {
             }
             System.out.println(index + ". @" + entry.getValue() + " : " + ((int) Math.round(reverse ? -entry.getKey() : entry.getKey())));
             //System.out.println(index + ". @" + entry.getValue() + " : " + (float) (0.001d * Math.round(reverse ? -entry.getKey() : entry.getKey())));
-            if (index++ >= 100) {
+            if (index++ >= 10000) {
                 break;
             }
         }
@@ -278,7 +278,7 @@ public class Stats {
         for (Map.Entry<String, Integer> entry : friendships.entrySet()) {
 
             friendships.put(entry.getKey(), 1000 * entry.getValue() / posgiven.get(entry.getKey().split(" ")[0]));
-        }
+        }/*
         for (Map.Entry<String, Integer> entry : friendships.entrySet().toArray(new Map.Entry[0])) {
             String key = entry.getKey().split(" ")[2].substring(1) + " <-> @" + entry.getKey().split(" ")[0];
             if (friendships.containsKey(key)) {
@@ -290,7 +290,7 @@ public class Stats {
                 friendships.remove(entry.getKey());
                 //friendships.put(entry.getKey(), 0);
             }
-        }
+        }*/
         for (Map.Entry<String, Integer> entry : hostiles.entrySet()) {
             hostiles.put(entry.getKey(), 1000 * entry.getValue() / neggiven.get(entry.getKey().split(" ")[0]));
         }
@@ -325,12 +325,12 @@ public class Stats {
             positivity.put(user, posgiven.get(user) / (double) neggiven.get(user));
         }
 
-        System.out.println(posgiven.get("modschi"));
-        System.out.println(neggiven.get("modschi"));
+        System.out.println(posgiven.get("Shadowfury333"));
+        System.out.println(neggiven.get("Shadowfury333"));
         System.out.println(neggiven.get("[2up]knorke"));
         System.out.println(neggiven.get("Aquanim"));
         System.out.println(neggiven.get("CrazyEddie"));
-        reverseMap(hostiles, true, new Checker() {
+        reverseMap(friendships, true, new Checker() {
             @Override
             public boolean check(String username) {//|| posts.get(username) > 100
                 String username2 = "asdf";
@@ -346,8 +346,8 @@ public class Stats {
                     return false;
                 }*/
                 //return true;
-                return (neggiven.get(username) > 10) && username.length() > 0;
-                //return (posgiven.get(username) + neggiven.get(username) > 100) && username.length() > 0
+                //return (neggiven.get(username) > 10) && username.length() > 0;
+                return (posgiven.get(username) + neggiven.get(username) > 100) && username.length() > 0;
                 //        && (posgiven.get(username2) + neggiven.get(username2) > 100) && username2.length() > 0;
                 //return (poskarma.get(username) + negkarma.get(username) > 100) && username.length() > 0;
             }
