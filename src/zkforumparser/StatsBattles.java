@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.xml.transform.stream.StreamSource;
 
 /**
  *
@@ -129,7 +132,7 @@ public class StatsBattles {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
         }
         return "{Unknown}";
     }
@@ -220,7 +223,7 @@ public class StatsBattles {
         int id, duration, ago, engine, firstCommenter;
         boolean bots, mission;
         String title, host, map, game;
-        List<Team> winners, losers;
+        List<Team> winners, losers, teams;
         Collection<Collection<Integer>> winnerPlayers, loserPlayers;
 
         public Battle(String line) {
@@ -247,6 +250,7 @@ public class StatsBattles {
             losers = Arrays.stream(line.split("\\|")[11].split("#")).filter(s -> !s.isEmpty()).map(Team::new).collect(Collectors.toList());
             winnerPlayers = Arrays.stream(line.split("\\|")[10].split("#")).filter(s -> !s.isEmpty()).map(Team::new).map(t -> t.players.stream().map(p -> p.id).collect(Collectors.toSet())).collect(Collectors.toSet());
             loserPlayers = Arrays.stream(line.split("\\|")[11].split("#")).filter(s -> !s.isEmpty()).map(Team::new).map(t -> t.players.stream().map(p -> p.id).collect(Collectors.toSet())).collect(Collectors.toSet());
+            teams = Stream.concat(winners.stream(), losers.stream()).collect(Collectors.toList());
             maps.add(this.map);
         }
 
@@ -461,7 +465,8 @@ public class StatsBattles {
         for (Battle b : battles.values()) {
             if (b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
                     || b.winners.get(0).players.size() < minSize || b.losers.get(0).players.size() < minSize
-                    || b.winners.get(0).players.size() > maxSize || b.losers.get(0).players.size() > maxSize) {
+                    || b.winners.get(0).players.size() > maxSize || b.losers.get(0).players.size() > maxSize
+                    || b.isFunMap()) {
                 continue;
             }
             for (Team t : b.winners) {
@@ -508,7 +513,8 @@ public class StatsBattles {
         for (Battle b : battles.values()) {
             if (b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
                     || b.winners.get(0).players.size() < minSize || b.losers.get(0).players.size() < minSize
-                    || b.winners.get(0).players.size() > maxSize || b.losers.get(0).players.size() > maxSize) {
+                    || b.winners.get(0).players.size() > maxSize || b.losers.get(0).players.size() > maxSize
+                    || b.isFunMap()) {
                 continue;
             }
             for (Team t : b.winners) {
@@ -591,16 +597,19 @@ public class StatsBattles {
         System.out.println(mostSynergy.size() + " entries");
 
         String rplc = "";
-        //rplc = "[\\[\\]]";
         
         for (Integer player : topPlayers.values()) {
-            player = 169779;
+            //player = 169779;
             System.out.println("" + getUserName(player).replaceAll(rplc, "") + ": @"
                     + getUserName(bestColleague1.get(player).getFirst()).replaceAll(rplc, "") + " @"
                     + getUserName(bestColleague2.get(player).getFirst()).replaceAll(rplc, "") + " @"
                     + getUserName(bestColleague3.get(player).getFirst()).replaceAll(rplc, "") + "");
                 //    + (Math.round(bestColleague1.get(player).getSecond() * 100) / 100d) + ")");
-            if (index++ >= 100) {
+            if (index == 100){
+                
+        rplc = "[\\[\\]]";
+            }
+            if (index++ >= 300) {
                 break;
             }
         }//
@@ -616,7 +625,7 @@ public class StatsBattles {
                 break;
             }
         }
-         */
+         //*/
         Map<Integer, Integer> smallTeamsWins = new HashMap();
         Map<Integer, Integer> smallTeamsLosses = new HashMap();
         Map<Integer, Integer> bigTeamsWins = new HashMap();
@@ -634,18 +643,47 @@ public class StatsBattles {
         }
 
         Set<Integer> trackedPlayers = new HashSet();
-        /*
-        trackedPlayers.add(232028);
-        trackedPlayers.add(343713);
-        trackedPlayers.add(43981);
-        trackedPlayers.add(77714);
-        trackedPlayers.add(6079);
-        trackedPlayers.add(185685);
-        trackedPlayers.add(1165);
-        trackedPlayers.add(228156);
+        //fffa
+//        trackedPlayers.add(232028);
+//        trackedPlayers.add(343713);
+//        trackedPlayers.add(43981);
+//        trackedPlayers.add(77714);
+//        trackedPlayers.add(6079);
+//        trackedPlayers.add(185685);
+//        trackedPlayers.add(1165);
+//        trackedPlayers.add(228156);
+//        trackedPlayers.add(139663);
+//        trackedPlayers.add(224173);
+        //metal
+//        trackedPlayers.add(204213);
+//        trackedPlayers.add(357426);
+        // 1v1
+//        trackedPlayers.add(169802);
+//        trackedPlayers.add(139663);
+//        trackedPlayers.add(218372);
+//        trackedPlayers.add(15114);
+//        trackedPlayers.add(85949);
+//        trackedPlayers.add(161294);
+//        trackedPlayers.add(251232);
         trackedPlayers.add(139663);
-        trackedPlayers.add(224173);*/
-        trackedPlayers.add(204213);
+        trackedPlayers.add(262575);
+        trackedPlayers.add(224173);
+        trackedPlayers.add(6079);
+        trackedPlayers.add(88618);
+        trackedPlayers.add(9058);
+        trackedPlayers.add(185685);
+        trackedPlayers.add(232028);
+        final Map<RatingSystem, String> ratingNames = new HashMap();
+        final Map<RatingSystem, Double> ratingScores = new HashMap();
+        ratingNames.put(new ELO(), "ZK Elo");
+        ratingNames.put(new TeamstrengthComs(), "Teamstrength with Coms");
+        ratingNames.put(new Teamstrength(), "Teamstrength without Coms");
+        ratingNames.put(new DummyRating(), "Always 0.5");
+        int ratingMaxScore = 0;
+        for (RatingSystem rs : ratingNames.keySet()) {
+            rs.init(players);
+            ratingScores.put(rs, 0d);
+        }
         ELO ffaRating = new ELO();
         ffaRating.init(players);
         ELO teamsRating = new ELO();
@@ -673,53 +711,48 @@ public class StatsBattles {
                     || b.winners.get(0).players.size() > 1 || b.losers.get(0).players.size() > 1)
                     && !b.isFunMap()) {
                 duelRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+
             }
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty())
-                    && b.map.toLowerCase().contains("duke")) {
+                    && b.map.toLowerCase().contains("mini") && b.map.toLowerCase().contains("wide")) {
                 metalRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+
             }
+            /*
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
-                    || b.winners.get(0).players.size() < 2 || b.losers.get(0).players.size() < 2
-                    || b.winners.get(0).players.size() > 4 || b.losers.get(0).players.size() > 4)
+                    || b.losers.size() < 2) && !b.isFunMap()) {*/
+            
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
+                    || b.winners.get(0).players.size() < 8 || b.losers.get(0).players.size() < 8
+                    || b.winners.get(0).players.size() > 16 || b.losers.get(0).players.size() > 16
+                    || b.winners.get(0).players.size() !=  b.losers.get(0).players.size())
                     && !b.isFunMap()) {
 
-                smallTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                for (Team t : b.winners) {
-                    for (Player p : t.players) {
-                        smallTeamsWins.put(p.id, smallTeamsWins.get(p.id) + 1);
+                ratingMaxScore += b.teams.size();
+                for (RatingSystem rs : ratingNames.keySet()) {
+                    List<Collection<Integer>> players = new ArrayList();
+                    for (int i = 0; i < b.teams.size(); i++) {
+                        players.add(new ArrayList());
+                        for (Player p : b.teams.get(i).players) {
+                            players.get(players.size() - 1).add(p.id);
+                        }
                     }
-                }
-                for (Team t : b.losers) {
-                    for (Player p : t.players) {
-                        smallTeamsLosses.put(p.id, smallTeamsLosses.get(p.id) + 1);
-                    }
-                }
-            }
-            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
-                    || b.winners.get(0).players.size() < 5 || b.losers.get(0).players.size() < 5
-                    || b.winners.get(0).players.size() > 55 || b.losers.get(0).players.size() > 55)
-                    && !b.isFunMap()) {
+                    //List<Double> pred = rs.predictResult(b.teams.stream().map(t -> t.players.stream().map(p -> p.id).collect(Collectors.toList())).collect(Collectors.toList()));
+                    List<Double> pred = rs.predictResult(players);
 
-                bigTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                for (Team t : b.winners) {
-                    for (Player p : t.players) {
-                        bigTeamsWins.put(p.id, bigTeamsWins.get(p.id) + 1);
+                    double score = ratingScores.get(rs);
+                    for (int i = 0; i < b.teams.size(); i++) {
+                        score += b.winners.contains(b.teams.get(i)) ? (1 + Math.log(pred.get(i)) / Math.log(2)) : (1 + Math.log(1 - pred.get(i)) / Math.log(2));
                     }
-                }
-                for (Team t : b.losers) {
-                    for (Player p : t.players) {
-                        bigTeamsLosses.put(p.id, bigTeamsLosses.get(p.id) + 1);
-                    }
-                }
-            }
-            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
-                    || b.losers.size() < 2) && !b.isFunMap()) {
+                    ratingScores.put(rs, score);
 
+                    rs.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                }
+                final int norm = ratingMaxScore;
+                //ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (ratingScores.get(rs) / norm)));
+                /*smallTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
                 Set<Integer> changed = new HashSet();
-                ffaRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
                 for (Team t : b.winners) {
                     for (Player p : t.players) {
                         //if (p.id == 232028) System.out.println("Won " + b.id + " against " + b.winners.get(0).players.get(0).getName());
@@ -742,14 +775,40 @@ public class StatsBattles {
                 }
                 System.out.print(ffa++);
                 for (Integer p : trackedPlayers) {
-                    System.out.print(";" + ((changed.contains(p)) ? ffaRating.getRating(p) : ""));
+                    System.out.print(";" + ((changed.contains(p)) ? smallTeamsRating.getRating(p) : ""));
+                } 
+                System.out.println();*/
+            }
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
+                    || b.winners.get(0).players.size() < 5 || b.losers.get(0).players.size() < 5
+                    || b.winners.get(0).players.size() > 55 || b.losers.get(0).players.size() > 55)
+                    && !b.isFunMap()) {
+
+                bigTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                for (Team t : b.winners) {
+                    for (Player p : t.players) {
+                        bigTeamsWins.put(p.id, bigTeamsWins.get(p.id) + 1);
+                    }
                 }
-                System.out.println();
+                for (Team t : b.losers) {
+                    for (Player p : t.players) {
+                        bigTeamsLosses.put(p.id, bigTeamsLosses.get(p.id) + 1);
+                    }
+                }
+            }
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
+                    || b.losers.size() < 2) && !b.isFunMap()) {
+
+                ffaRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+
             }
         }
-        for (Integer p : trackedPlayers) {
-            System.out.println(getUserName(p) + ": " + duelRating.getRating(p));
-        }
+        final int norm = ratingMaxScore;
+        ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (ratingScores.get(rs) / norm)));
+
+        System.exit(0);
 
         Map<Double, Integer> bestSmallTeams = new TreeMap();
         Map<Double, Integer> bestBigTeams = new TreeMap();
@@ -757,7 +816,12 @@ public class StatsBattles {
         Map<Double, Integer> bestMetal = new TreeMap();
 
         for (Integer p : smallTeamsWins.keySet()) {
-            double elo = teamsRating.getRating(p);
+            double elo = 0;
+            for (RatingSystem rs : ratingNames.keySet()) {
+                if (ratingNames.get(rs).contains("ZK")) {
+                    elo = ((ELO) rs).getRating(p);
+                }
+            }
             bestSmallTeams.put(-elo + Math.random() / 10000, p);
         }
         for (Integer p : bigTeamsWins.keySet()) {
@@ -779,7 +843,7 @@ public class StatsBattles {
         String replace = "";
         for (Map.Entry<Double, Integer> entry : bestSmallTeams.entrySet()) {
             System.out.println(place + ". @" + getUserName(entry.getValue()).replaceAll(replace, "") + " : "
-                    + -(Math.round(entry.getKey() * 10) / 10d));
+                    + -(Math.round(entry.getKey() * 10) / 10d) + " " + entry.getValue());
             if (place >= 10) {
                 replace = "[\\[\\]]";
             }
@@ -802,6 +866,9 @@ public class StatsBattles {
         place = 1;
         replace = "";
         for (Map.Entry<Double, Integer> entry : bestFFA.entrySet()) {
+            if (Math.abs(-entry.getKey() - 1500d) < 0.1d) {
+                continue;
+            }
             System.out.println(place + ". @" + getUserName(entry.getValue()).replaceAll(replace, "") + " : "
                     + -(Math.round(entry.getKey() * 10) / 10d));
             if (place >= 10) {
@@ -823,13 +890,14 @@ public class StatsBattles {
                 break;
             }
         }
+        //*/
 
         Map<Integer, Integer> playerBattles = new HashMap();
         for (Integer p : players) {
             playerBattles.put(p, 0);
         }
         final int minSize = 2;
-        final int maxSize = 44;
+        final int maxSize = 4;
         for (Battle b : battles.values()) {
             if (b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
                     || b.winners.get(0).players.size() < minSize || b.losers.get(0).players.size() < minSize
@@ -888,7 +956,7 @@ public class StatsBattles {
                     for (Team t2 : b.losers) {
                         for (Player p2 : t2.players) {
                             if (selectedPlayers.contains(p.id) && selectedPlayers.contains(p2.id)) {
-                                //if (p.id == 348500 && p2.id == 169779) System.out.print("@B" + b.id + " ");
+                                //if (p.id == 185685 && p2.id == 134367) System.out.print("@B" + b.id + "\n");
                                 pairWins.put(new Pair(p.id, p2.id), pairWins.get(new Pair(p.id, p2.id)) + 1);
                             }
                         }
@@ -903,7 +971,9 @@ public class StatsBattles {
                     for (Team t2 : b.winners) {
                         for (Player p2 : t2.players) {
                             if (selectedPlayers.contains(p.id) && selectedPlayers.contains(p2.id)) {
-                                //if (p.id == 348500 && p2.id == 169779) System.out.print("@B" + b.id + " ");
+                                if (p.id == 185685 && p2.id == 134367) {
+                                    System.out.print("@B" + b.id + "\n");
+                                }
                                 pairLosses.put(new Pair(p.id, p2.id), pairLosses.get(new Pair(p.id, p2.id)) + 1);
                             }
                         }

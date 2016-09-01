@@ -319,7 +319,7 @@ public class ZKForumParser {
 //            writefile(entry.getValue());
 //            if (entry.getKey() % 100 == 0)System.out.println("written " + entry.getKey());
 //        }
-        List<String> file = new ArrayList();//Files.readAllLines(Paths.get("battles.txt"));
+        List<String> file = Files.readAllLines(Paths.get("battles.txt"));
         /*System.out.println(parseBattle(428849));
         if (true) {
             return;

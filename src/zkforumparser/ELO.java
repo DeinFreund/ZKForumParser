@@ -27,7 +27,7 @@ public class ELO implements RatingSystem {
 
     @Override
     public List<Double> predictResult(List<Collection<Integer>> teams) {
-        return teams.stream().map(t -> 1d / (1d + Math.pow(10, (t.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble() - teams.stream().flatMap(x -> x.stream()).filter(x -> !t.contains(x)).mapToDouble(x -> ratings.get(x)).average().getAsDouble()) / 400d))).collect(Collectors.toList()); 
+        return teams.stream().map(t -> 1d / (1d + Math.pow(10, (-t.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble() + teams.stream().flatMap(x -> x.stream()).filter(x -> !t.contains(x)).mapToDouble(x -> ratings.get(x)).average().getAsDouble()) / 400d))).collect(Collectors.toList()); 
     }
 
     @Override
