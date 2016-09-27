@@ -19,7 +19,17 @@ import java.util.stream.Collectors;
 public class ELO implements RatingSystem {
     
     Map<Integer, Double> ratings = new HashMap();
+    
+    double K = 64;
 
+    public ELO(){
+        
+    }
+    
+    public ELO(double k){
+        this.K = k;
+    }
+    
     @Override
     public void init(Collection<Integer> playerIds) {
         playerIds.stream().forEach(p -> ratings.put(p, 1500d));
@@ -27,7 +37,7 @@ public class ELO implements RatingSystem {
 
     @Override
     public List<Double> predictResult(List<Collection<Integer>> teams) {
-        return teams.stream().map(t -> 1d / (1d + Math.pow(10, (-t.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble() + teams.stream().flatMap(x -> x.stream()).filter(x -> !t.contains(x)).mapToDouble(x -> ratings.get(x)).average().getAsDouble()) / 400d))).collect(Collectors.toList()); 
+        return teams.stream().map(t -> (2d / teams.size()) * 1d / (1d + Math.pow(10, (-t.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble() + teams.stream().flatMap(x -> x.stream()).filter(x -> !t.contains(x)).mapToDouble(x -> ratings.get(x)).average().getAsDouble()) / 400d))).collect(Collectors.toList()); 
     }
 
     @Override
@@ -35,8 +45,8 @@ public class ELO implements RatingSystem {
         Set<Integer> winners = winnerTeams.stream().flatMap(x -> x.stream()).collect(Collectors.toSet());
         Set<Integer> losers = loserTeams.stream().flatMap(x -> x.stream()).collect(Collectors.toSet());
         double dif = winners.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble() - losers.stream().mapToDouble(x -> ratings.get(x)).average().getAsDouble();
-        winners.forEach(x -> ratings.put(x, ratings.get(x) + Math.sqrt((winners.size() + losers.size()) / 2d) * (32 - 32d / (1 + Math.pow(10, -dif / 400d))) / winners.size()));
-        losers.forEach(x -> ratings.put(x, ratings.get(x) - Math.sqrt((winners.size() + losers.size()) / 2d) * (32d / (1 + Math.pow(10, dif / 400d))) / losers.size()));
+        winners.forEach(x -> ratings.put(x, ratings.get(x) + Math.sqrt((winners.size() + losers.size()) / 2d) * (K - K / (1 + Math.pow(10, -dif / 400d))) / winners.size()));
+        losers.forEach(x -> ratings.put(x, ratings.get(x) - Math.sqrt((winners.size() + losers.size()) / 2d) * (K / (1 + Math.pow(10, dif / 400d))) / losers.size()));
     }
     
     //Optional

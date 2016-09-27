@@ -328,7 +328,7 @@ public class ZKForumParser {
             int postId = Integer.valueOf(line.split("\\|")[0]);
             data.put(postId, line + '\n');
         }
-        for (int index = 1; index < 500000; index++) {
+        for (int index = 1; index < 430000; index++) {
             if (data.containsKey(index)) {
                 continue;
             }
@@ -348,7 +348,7 @@ public class ZKForumParser {
         }
         Thread.sleep(2000);
         for (Map.Entry<Integer, String> entry : data.entrySet()) {
-            writefile(entry.getValue(), "battles.txt");
+            writefile(entry.getValue(), "battles2.txt");
             if (entry.getKey() % 100 == 0) {
                 System.out.println("written " + entry.getKey());
             }

@@ -211,7 +211,9 @@ public class StatsBattles {
                 Player player = new Player(p);
                 this.players.add(player);
                 if (p.split("/").length > 2) {
-                    this.deathTime.put(player, parseTime(p.split("/")[2]));
+                    if (parseTime(p.split("/")[2]) > 0) {
+                        this.deathTime.put(player, parseTime(p.split("/")[2]));
+                    }
                     this.awards.put(player, Arrays.stream(p.split("/"), 3, p.split("/").length).map(Award::new).collect(Collectors.toSet()));
                 }
             }
@@ -238,7 +240,6 @@ public class StatsBattles {
             this.id = Integer.valueOf(line.split("\\|")[0]);
             this.engine = line.split("\\|")[7].isEmpty() ? 0 : Integer.valueOf(line.split("\\|")[7].split("\\.")[0]);
             this.firstCommenter = line.split("\\|")[12].isEmpty() ? 0 : Integer.valueOf(line.split("\\|")[12]);
-            this.duration = parseTime(line.split("\\|")[5]);
             this.ago = parseTime(line.split("\\|")[4]);
 
             this.bots = Boolean.valueOf(line.split("\\|")[8]);
@@ -252,6 +253,11 @@ public class StatsBattles {
             loserPlayers = Arrays.stream(line.split("\\|")[11].split("#")).filter(s -> !s.isEmpty()).map(Team::new).map(t -> t.players.stream().map(p -> p.id).collect(Collectors.toSet())).collect(Collectors.toSet());
             teams = Stream.concat(winners.stream(), losers.stream()).collect(Collectors.toList());
             maps.add(this.map);
+
+            duration = teams.stream().flatMap(t -> t.deathTime.values().stream()).reduce(0, Integer::max);
+            if (duration == 0) {
+                duration = parseTime(line.split("\\|")[5]);
+            }
         }
 
         public boolean isFunMap() {
@@ -626,12 +632,204 @@ public class StatsBattles {
             }
         }
          //*/
+ /*
+        Map<Integer, Double> playerResignTime = new HashMap();
+        Map<Integer, Double> playerResignTimeWins = new HashMap();
+        Map<Integer, Double> playerResignTimeLosses = new HashMap();
+        Map<Integer, Integer> playerGameLosses = new HashMap();
+        Map<Integer, Integer> playerGameWins = new HashMap();
+        Map<Integer, Integer> playerPredicted = new HashMap();
+        Map<Integer, Integer> playerFirepluk = new HashMap();
+        Map<Integer, Integer> player1v1ResignSpeed = new HashMap();
+        Map<Integer, Integer> player1v1Resigns = new HashMap();
+
+        for (Integer p : players) {
+            playerResignTime.put(p, 0d);
+            playerResignTimeWins.put(p, 0d);
+            playerResignTimeLosses.put(p, 0d);
+            playerGameLosses.put(p, 0);
+            playerGameWins.put(p, 0);
+            playerPredicted.put(p, 0);
+            playerFirepluk.put(p, 0);
+            player1v1ResignSpeed.put(p, 0);
+            player1v1Resigns.put(p, 0);
+        }
+
+        for (Battle b : battles.values()) {
+            if (b.id < 395000) continue;
+            if (b.bots || b.mission || b.duration < 120 || b.isFunMap() || b.winners.size() != 1 || b.losers.size() != 1) {
+                continue;
+            }
+
+            for (Team t : b.winners) {
+                for (Player p : t.players) {
+                    double death = (t.deathTime.containsKey(p) ? t.deathTime.get(p) : b.duration);
+                    playerResignTime.put(p.id, playerResignTime.get(p.id) + (death / (double) b.duration));
+                    playerResignTimeWins.put(p.id, playerResignTimeWins.get(p.id) + (death / (double) b.duration));
+                    playerGameWins.put(p.id, playerGameWins.get(p.id) + 1);
+                    if (death / b.duration < 0.95) {
+                        if (p.id == 204213) {
+                            System.out.print("@B" + b.id + " ");
+                        }
+                        playerFirepluk.put(p.id, playerFirepluk.get(p.id) + 1);
+                    }
+                }
+            }
+            for (Team t : b.losers) {
+                for (Player p : t.players) {
+                    double death = (t.deathTime.containsKey(p) ? t.deathTime.get(p) : b.duration);
+                    playerResignTime.put(p.id, playerResignTime.get(p.id) + (death / (double) b.duration));
+                    playerResignTimeLosses.put(p.id, playerResignTimeLosses.get(p.id) + (death / (double) b.duration));
+                    playerGameLosses.put(p.id, playerGameLosses.get(p.id) + 1);
+                    if (death / b.duration < 0.9) {
+                        if (p.id == 204213) {
+                            System.out.print("@B" + b.id + " ");
+                        }
+                        playerPredicted.put(p.id, playerPredicted.get(p.id) + 1);
+                    }
+                    if (death / b.duration > 1.001) {
+                        System.out.println(death / b.duration);
+                        System.out.println(getUserName(p.id));
+                        System.out.println(b.id);
+                    }
+                }
+            }
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
+                    || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
+                    || b.winners.get(0).players.size() > 1 || b.losers.get(0).players.size() > 1)
+                    && !b.isFunMap()) {
+                b.teams.stream().flatMap(t -> t.deathTime.entrySet().stream()).forEach(e -> {
+                    player1v1ResignSpeed.put(e.getKey().id, player1v1ResignSpeed.get(e.getKey().id) + e.getValue());
+                    player1v1Resigns.put(e.getKey().id, player1v1Resigns.get(e.getKey().id) + 1);
+                });
+            }
+        }
+
+        Map<Double, Integer> earliestResign = new TreeMap();
+        Map<Double, Integer> latestResign = new TreeMap();
+        Map<Double, Integer> mostFirepluk = new TreeMap();
+        Map<Double, Integer> mostResigns = new TreeMap();
+        Map<Double, Integer> bestPrediction = new TreeMap();
+        Map<Double, Integer> resignEffectiveness = new TreeMap();
+        Map<Double, Integer> resignSpeed1v1 = new TreeMap();
+
+        for (Integer p : players) {
+            int wins = playerGameWins.get(p);
+            int losses = playerGameLosses.get(p);
+            if (wins > 50 && losses > 50) {
+                earliestResign.put(playerResignTime.get(p) / (wins + losses) + Math.random() / 100000d, p);
+                if (wins + losses > 300) {
+                    latestResign.put(-playerResignTime.get(p) / (wins + losses) + Math.random() / 100000d, p);
+                }
+                mostFirepluk.put(-playerFirepluk.get(p) / (double) (1) + Math.random() / 100000d, p);
+                bestPrediction.put(-playerPredicted.get(p) / (double) (1) + Math.random() / 100000d, p);
+                mostResigns.put(-(playerPredicted.get(p) + playerFirepluk.get(p)) / (double) (wins + losses) + Math.random() / 100000d, p);
+                if (playerPredicted.get(p) + playerFirepluk.get(p) > 20) {
+                    resignEffectiveness.put(-Math.min(9001, playerPredicted.get(p) / (double) playerFirepluk.get(p)) + Math.random() / 100000d, p);
+                }
+                if (player1v1Resigns.get(p) > 12){
+                    resignSpeed1v1.put(player1v1ResignSpeed.get(p) / (60d * player1v1Resigns.get(p)) + Math.random() / 100000d, p);
+                }
+            }
+        }
+        int rank = 1;
+        String replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : earliestResign.entrySet()) {
+            if (Math.abs(-entry.getKey() - 1500d) < 0.01d) {
+                continue;
+            }
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + (Math.round(entry.getKey() * 1000) / 10d) + "% ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : latestResign.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + -(Math.round(entry.getKey() * 1000) / 10d) + "% ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : mostResigns.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + -(Math.round(entry.getKey() * 1000) / 10d) + "% ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : resignEffectiveness.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + -(Math.round(entry.getKey() * 10) / 10d) + " (" + (Math.round((-entry.getKey() / (-entry.getKey() + 1)) * 1000) / 10d) + "%) ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : resignSpeed1v1.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + (Math.round(entry.getKey() * 10) / 10d) + " minutes");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : mostFirepluk.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + -(Math.round(entry.getKey() * 1) / 1) + " ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        rank = 1;
+        replaceBrackets = "";
+        for (Map.Entry<Double, Integer> entry : bestPrediction.entrySet()) {
+            System.out.println(rank + ". @" + getUserName(entry.getValue()).replaceAll(replaceBrackets, "") + " : "
+                    + -(Math.round(entry.getKey() * 1) / 1) + " ");
+            if (rank >= 10) {
+                replaceBrackets = "[\\[\\]]";
+            }
+            if (rank++ >= 50) {
+                break;
+            }
+        }
+        System.exit(0);
+
+        //*/
         Map<Integer, Integer> smallTeamsWins = new HashMap();
         Map<Integer, Integer> smallTeamsLosses = new HashMap();
         Map<Integer, Integer> bigTeamsWins = new HashMap();
         Map<Integer, Integer> bigTeamsLosses = new HashMap();
         Map<Integer, Integer> ffaWins = new HashMap();
         Map<Integer, Integer> ffaLosses = new HashMap();
+        Map<Integer, Integer> firstGame = new HashMap();
+        Map<Integer, Integer> lastGame = new HashMap();
 
         for (Integer p : players) {
             smallTeamsWins.put(p, 0);
@@ -665,36 +863,70 @@ public class StatsBattles {
 //        trackedPlayers.add(85949);
 //        trackedPlayers.add(161294);
 //        trackedPlayers.add(251232);
-        trackedPlayers.add(139663);
-        trackedPlayers.add(262575);
-        trackedPlayers.add(224173);
-        trackedPlayers.add(6079);
-        trackedPlayers.add(88618);
-        trackedPlayers.add(9058);
-        trackedPlayers.add(185685);
-        trackedPlayers.add(232028);
+        //trackedPlayers.add(391198);
+        //trackedPlayers.add(330454);
+        // trackedPlayers.add(232028);
         final Map<RatingSystem, String> ratingNames = new HashMap();
         final Map<RatingSystem, Double> ratingScores = new HashMap();
-        ratingNames.put(new ELO(), "ZK Elo");
+        /*
+//        ratingNames.put(new ELO(63), "ZK Elo (K=63)");
+//        ratingNames.put(new ELO(65), "ZK Elo (K=65)");
+//        ratingNames.put(new ELO(50), "ZK Elo (K=50)");
+//        ratingNames.put(new ELO(80), "ZK Elo (K=80)");
+//        ratingNames.put(new ELO(50), "ZK Elo (K=60)");
+//        ratingNames.put(new ELO(80), "ZK Elo (K=70)");
         ratingNames.put(new TeamstrengthComs(), "Teamstrength with Coms");
         ratingNames.put(new Teamstrength(), "Teamstrength without Coms");
+        ratingNames.put(new TeamstrengthComs(64), "Teamstrength with Coms (K=64)");
+        ratingNames.put(new Teamstrength(64), "Teamstrength without Coms (K=64)");
+        ratingNames.put(new Teamstrength(48), "Teamstrength without Coms (K=48)");
+        ratingNames.put(new GeneralEloTeamstrength(32, false, false, false), "GeneralTeamstrength without anything");
+        ratingNames.put(new GeneralEloTeamstrength(32, false, true, false), "GeneralTeamstrength with Dmod");
+        ratingNames.put(new GeneralEloTeamstrength(32, false, false, true), "GeneralTeamstrength with extra coms");
+        ratingNames.put(new GeneralEloTeamstrength(32, false, true, true), "GeneralTeamstrength with Dmod and extra coms");
+        ratingNames.put(new GeneralEloTeamstrength(32, true, false, false), "GeneralTeamstrength with kMod");
+        ratingNames.put(new GeneralEloTeamstrength(32, true, true, false), "GeneralTeamstrength with kMod and Dmod");
+        ratingNames.put(new GeneralEloTeamstrength(32, true, false, true), "GeneralTeamstrength with kMod and extra coms");
+        ratingNames.put(new GeneralEloTeamstrength(32, true, true, true), "GeneralTeamstrength with everything");*/
+
+        ratingNames.put(new ELO(), "ZK Elo");
+        ratingNames.put(new ELO(32), "Old ZK Elo");
+        ratingNames.put(new InterpolatedELO(5, 64), "Interp ELO (S=5, K=64)");
+        ratingNames.put(new InterpolatedELO(6, 64), "Interp ELO (S=6, K=64)");
+        ratingNames.put(new LinearMixedELO(2, 8), "Lin Mix ELO (2, 8)");
+        ratingNames.put(new LinearMixedELO(2, 16), "Lin Mix ELO (2, 16)");
+        ratingNames.put(new LinearMixedELO(2, 8, 16), "Lin Mix ELO (2, 8, 16)");
+        ratingNames.put(new LinearMixedELO(2, 6), "Lin Mix ELO (2, 6)");
+        ratingNames.put(new SplitELO(8, 32), "Split ELO (S=8, K=64)");
+        ratingNames.put(new SplitELO(4, 32), "Split ELO (S=4, K=64)");
+        ratingNames.put(new SplitELO(2, 32), "Split ELO (S=2, K=64)");
+        //ratingNames.put(new Teamstrength(64), "Teamstrength without Coms (K=64)");
+
+//        ratingNames.put(new GeneralEloTeamstrength(64, false, true, true), "GTeamstrength(64, false, true, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(64, false, false, true), "GTeamstrength(64, false, false, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(80, false, false, true), "GTeamstrength(80, false, false, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(64, true, false, true), "GTeamstrength(64, true, false, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(80, false, true, true), "GTeamstrength(80, false, true, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(80, false, false, true), "GTeamstrength(80, false, false, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(100, false, false, true), "GTeamstrength(100, false, false, true)");
+//        ratingNames.put(new GeneralEloTeamstrength(80, true, false, true), "GTeamstrength(80, true, false, true)");
         ratingNames.put(new DummyRating(), "Always 0.5");
         int ratingMaxScore = 0;
         for (RatingSystem rs : ratingNames.keySet()) {
             rs.init(players);
             ratingScores.put(rs, 0d);
         }
-        ELO ffaRating = new ELO();
+        ELO ffaRating = new ELO(32);
         ffaRating.init(players);
-        ELO teamsRating = new ELO();
+        ELO teamsRating = new ELO(32);
         teamsRating.init(players);
-        ELO metalRating = new ELO();
+        ELO metalRating = new ELO(32);
         metalRating.init(players);
-        ELO duelRating = new ELO();
+        ELO duelRating = new ELO(32);
         duelRating.init(players);
-        ELO smallTeamsRating = new ELO();
+        ELO smallTeamsRating = new ELO(32);
         smallTeamsRating.init(players);
-        ELO bigTeamsRating = new ELO();
+        ELO bigTeamsRating = new ELO(32);
         bigTeamsRating.init(players);
         Map<Integer, Double> trackedWins = new HashMap();
         for (Integer p : trackedPlayers) {
@@ -704,8 +936,10 @@ public class StatsBattles {
         System.out.println();
         final double conv = 0.99;
 
+        Set<Integer> activePlayers = new HashSet();
         int ffa = 0;
         for (Battle b : battles.values()) {
+
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
                     || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
                     || b.winners.get(0).players.size() > 1 || b.losers.get(0).players.size() > 1)
@@ -713,22 +947,24 @@ public class StatsBattles {
                 duelRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
 
             }
-            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty())
-                    && b.map.toLowerCase().contains("mini") && b.map.toLowerCase().contains("wide")) {
-                metalRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-
-            }
             /*
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
-                    || b.losers.size() < 2) && !b.isFunMap()) {*/
+                    || b.losers.size() < 2) && !b.isFunMap()) {
+            //*/
             
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
-                    || b.winners.get(0).players.size() < 8 || b.losers.get(0).players.size() < 8
-                    || b.winners.get(0).players.size() > 16 || b.losers.get(0).players.size() > 16
+                    || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
+                    || b.winners.get(0).players.size() > 4 || b.losers.get(0).players.size() > 4
                     || b.winners.get(0).players.size() !=  b.losers.get(0).players.size())
-                    && !b.isFunMap()) {
+                    && !b.isFunMap()) {//
+                
 
-                ratingMaxScore += b.teams.size();
+                smallTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+
+                ratingMaxScore++;
+                double scoreMul = 1d / b.teams.size();
+
                 for (RatingSystem rs : ratingNames.keySet()) {
                     List<Collection<Integer>> players = new ArrayList();
                     for (int i = 0; i < b.teams.size(); i++) {
@@ -742,21 +978,25 @@ public class StatsBattles {
 
                     double score = ratingScores.get(rs);
                     for (int i = 0; i < b.teams.size(); i++) {
-                        score += b.winners.contains(b.teams.get(i)) ? (1 + Math.log(pred.get(i)) / Math.log(2)) : (1 + Math.log(1 - pred.get(i)) / Math.log(2));
+                        score += scoreMul * (b.winners.contains(b.teams.get(i)) ? (1 + Math.log(pred.get(i)) / Math.log(2)) : (1 + Math.log(1 - pred.get(i)) / Math.log(2)));
                     }
-                    ratingScores.put(rs, score);
+                    if (players.size() > 4)ratingScores.put(rs, score);
 
                     rs.evaluateResult(b.winnerPlayers, b.loserPlayers);
                 }
                 final int norm = ratingMaxScore;
                 //ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (ratingScores.get(rs) / norm)));
-                /*smallTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
-                teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+            }
                 Set<Integer> changed = new HashSet();
                 for (Team t : b.winners) {
                     for (Player p : t.players) {
                         //if (p.id == 232028) System.out.println("Won " + b.id + " against " + b.winners.get(0).players.get(0).getName());
                         ffaWins.put(p.id, ffaWins.get(p.id) + b.losers.size());
+                        if (!firstGame.containsKey(p.id)) firstGame.put(p.id, b.ago);
+                        lastGame.put(p.id, b.ago);
+                        if (b.id > 395000) {
+                            activePlayers.add(p.id);
+                        }
                         if (trackedPlayers.contains(p.id)) {
                             trackedWins.put(p.id, trackedWins.get(p.id) * conv + (1 - conv) * (b.losers.size() + 1));
                             changed.add(p.id);
@@ -767,23 +1007,38 @@ public class StatsBattles {
                     for (Player p : t.players) {
                         //if (p.id == 232028) System.out.println("Lost " + b.id + " against " + b.winners.get(0).players.get(0).getName());
                         ffaLosses.put(p.id, ffaLosses.get(p.id) + 1);
+                        if (!firstGame.containsKey(p.id)) firstGame.put(p.id, b.ago);
+                        lastGame.put(p.id, b.ago);
+                        if (b.id > 395000) {
+                            activePlayers.add(p.id);
+                        }
                         if (trackedPlayers.contains(p.id)) {
                             trackedWins.put(p.id, trackedWins.get(p.id) * conv);
                             changed.add(p.id);
                         }
                     }
                 }
-                System.out.print(ffa++);
-                for (Integer p : trackedPlayers) {
-                    System.out.print(";" + ((changed.contains(p)) ? smallTeamsRating.getRating(p) : ""));
-                } 
-                System.out.println();*/
-            }
-            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
-                    || b.winners.get(0).players.size() < 5 || b.losers.get(0).players.size() < 5
-                    || b.winners.get(0).players.size() > 55 || b.losers.get(0).players.size() > 55)
-                    && !b.isFunMap()) {
+                if (!changed.isEmpty()) {
+                    System.out.print(b.id);
+                    for (Integer p : trackedPlayers) {
+                        System.out.print(";" + ((changed.contains(p)) ? smallTeamsRating.getRating(p) : ""));
+                    }
+                    System.out.println();
+                }
+            
 
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty())
+                    && b.map.toLowerCase().contains("mini") && b.map.toLowerCase().contains("wide")) {
+                metalRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+
+            }
+
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
+                    || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
+                    || b.winners.get(0).players.size() > 16 || b.losers.get(0).players.size() > 16
+                    || b.winners.get(0).players.size() !=  b.losers.get(0).players.size())
+                    && !b.isFunMap()) {//
+                
                 bigTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
                 teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
                 for (Team t : b.winners) {
@@ -805,10 +1060,53 @@ public class StatsBattles {
 
             }
         }
+        double avg = 0;
+
+        double minElo = Integer.MAX_VALUE;
+        double maxElo = 0;
+        for (Integer p : activePlayers.toArray(new Integer[activePlayers.size()])) {
+            if (ffaWins.get(p) + ffaLosses.get(p) < 10) {
+                activePlayers.remove(p);
+            }else{
+                
+                minElo = Math.min(minElo, smallTeamsRating.getRating(p) - 0.001);
+                maxElo = Math.max(maxElo, smallTeamsRating.getRating(p) + 0.001);
+            }
+        }
+        /*
+        int small, big; //retention
+        small = big = 0;
+        for (Integer p : players){
+            if (firstGame.containsKey(p) && firstGame.get(p) - lastGame.get(p) > 30000000 &&
+                    ffaWins.get(p) + ffaLosses.get(p) > 50){
+                big ++;
+            }
+            
+            if (ffaWins.get(p) + ffaLosses.get(p) > 10) {
+                small ++;
+            }
+        }
+        System.out.println(small + " - " + big + " : " + (float)big/small);*/
+        int count = 0;
+        int bins = 50;
+        int bin[] = new int[bins];
+        for (Integer p : activePlayers) {
+            double elo = smallTeamsRating.getRating(p);
+            bin[(int) (bins * (elo - minElo) / (maxElo - minElo))]++;
+            avg += elo;
+            count++;
+        }
+        for (int i = 0; i < bins; i++){
+            System.out.println(Math.round(minElo + (i+0.5) * (maxElo - minElo) / bins) + ";" + bin[i]);
+        }
+        System.out.println("Average ELO: " + avg / count);
+
         final int norm = ratingMaxScore;
         ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (ratingScores.get(rs) / norm)));
 
-        System.exit(0);
+        System.out.println(smallTeamsRating.getRating(5295));
+        //System.out.println(bigTeamsRating.getRating(5295));
+        //System.exit(0);
 
         Map<Double, Integer> bestSmallTeams = new TreeMap();
         Map<Double, Integer> bestBigTeams = new TreeMap();
@@ -818,14 +1116,21 @@ public class StatsBattles {
         for (Integer p : smallTeamsWins.keySet()) {
             double elo = 0;
             for (RatingSystem rs : ratingNames.keySet()) {
+                if (ratingNames.get(rs).contains("without Coms (K=48")) {
+                    elo = ((ELO) rs).getRating(p);
+                }
+            }
+            elo = smallTeamsRating.getRating(p);
+            bestSmallTeams.put(-elo + Math.random() / 10000, p);
+        }
+        for (Integer p : bigTeamsWins.keySet()) {
+            double elo = 0;
+            for (RatingSystem rs : ratingNames.keySet()) {
                 if (ratingNames.get(rs).contains("ZK")) {
                     elo = ((ELO) rs).getRating(p);
                 }
             }
-            bestSmallTeams.put(-elo + Math.random() / 10000, p);
-        }
-        for (Integer p : bigTeamsWins.keySet()) {
-            double elo = bigTeamsRating.getRating(p);
+            elo = bigTeamsRating.getRating(p);
             bestBigTeams.put(-elo + Math.random() / 10000, p);
         }
         for (Integer p : ffaWins.keySet()) {
@@ -842,8 +1147,11 @@ public class StatsBattles {
         int place = 1;
         String replace = "";
         for (Map.Entry<Double, Integer> entry : bestSmallTeams.entrySet()) {
+            if (Math.abs(-entry.getKey() - 1500d) < 0.01d) {
+                continue;
+            }
             System.out.println(place + ". @" + getUserName(entry.getValue()).replaceAll(replace, "") + " : "
-                    + -(Math.round(entry.getKey() * 10) / 10d) + " " + entry.getValue());
+                    + -(Math.round(entry.getKey() * 10) / 10d) /*+ " " + entry.getValue()*/);
             if (place >= 10) {
                 replace = "[\\[\\]]";
             }
@@ -863,6 +1171,7 @@ public class StatsBattles {
                 break;
             }
         }
+        System.exit(0);
         place = 1;
         replace = "";
         for (Map.Entry<Double, Integer> entry : bestFFA.entrySet()) {

@@ -173,6 +173,7 @@ public class Stats {
         final Map<String, Integer> neggiven = new HashMap();
         final Map<String, Integer> posts = new HashMap();
         final Map<String, Map< Long, Integer>> postsTime = new HashMap();
+        final Map<String, Map< Long, Integer>> negKarmaTime = new HashMap();
         final Map<String, Integer> worstposts = new HashMap();
         final Map<String, Integer> bestposts = new HashMap();
         final Map<String, Integer> friendships = new HashMap();
@@ -220,10 +221,12 @@ public class Stats {
                 negkarma.put(username, 0);
                 posts.put(username, 0);
                 postsTime.put(username, new TreeMap());
+                negKarmaTime.put(username, new TreeMap());
             }
             if (!postsTime.get(username).containsKey(time / freqDiv)) {
                 postsTime.get(username).put(time / freqDiv, 0);
             }
+            negKarmaTime.get(username).put(time / freqDiv, negkarma.get(username));
             postsTime.get(username).put(time / freqDiv, postsTime.get(username).get(time / freqDiv) + 1);
             if (!posgiven.containsKey(username)) {
                 posgiven.put(username, 0);
@@ -359,7 +362,7 @@ public class Stats {
         }
         for (long time : postFreq.keySet()) {
             int count = 0;
-            if (time * freqDiv < 483 * 3000000000l) continue;
+            if (time * freqDiv < 483 * 3000000000l * freqDiv / 1000000000l) continue;
             for (String name : posts.keySet()) {
                 if (postsTime.get(name).containsKey(time)){
                     postsTimeSummed.put(name, postsTimeSummed.get(name) + postsTime.get(name).get(time));
@@ -376,7 +379,7 @@ public class Stats {
         }
         for (long time : postFreq.keySet()) {
             int count = 0;
-            if (time * freqDiv < 483 * 3000000000l) continue;
+            if (time * freqDiv < 483 * 3000000000l * freqDiv / 1000000000l) continue;
             //System.out.print(time + "\t");
             for (String name : toppostersRecent.values()) {
                 if (count++ >= 10) {
@@ -385,7 +388,7 @@ public class Stats {
                 if (postsTime.get(name).containsKey(time)){
                     postsTimeSummed.put(name, postsTimeSummed.get(name) + postsTime.get(name).get(time));
                 }
-                System.out.print(postsTimeSummed.get(name) + "\t");
+                System.out.print(negKarmaTime.get(name) + "\t");
             }
             System.out.println();
             //System.out.println(divFreq.get(time).size() + "\t" + postFreq.get(time));
