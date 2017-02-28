@@ -273,7 +273,7 @@ public class StatsBattles {
         long time = System.currentTimeMillis();
 
         Map<Integer, Battle> battles = new TreeMap();
-        Files.readAllLines(Paths.get("battles.txt")).stream().map((line) -> new Battle(line)).filter(b -> b.id < 100000).forEach((b) -> {
+        Files.readAllLines(Paths.get("battles.txt")).stream().limit(100000).map((line) -> new Battle(line)).filter(b -> b.id < 1000000).forEach((b) -> {
             battles.put(b.id, b);
             if (b.id - last >= 10000){
             System.out.println(b.id);

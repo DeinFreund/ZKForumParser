@@ -21,20 +21,38 @@ public class Game {
         this.winner = winner;
     }
     
+    private double totWeight;
     private double getWhiteElo(){
         double ret = 0;
+        double w; totWeight = 0;
         for (PlayerDay pd : whiteDays.values()){
-            ret += pd.getElo();
+            w = 1; //Math.max(0.1, Math.min(10, 1 / pd.uncertainty));
+            //System.out.println(w);
+            totWeight += w;
+            ret += pd.getElo() * w;
         }
-        return ret / whiteDays.size();
+            //System.out.println(totWeight + "\n");
+        return ret / totWeight;
     }
     
     private double getBlackElo(){
         double ret = 0;
+        double w; totWeight = 0;
         for (PlayerDay pd : blackDays.values()){
-            ret += pd.getElo();
+            w = 1;//Math.max(0.1, Math.min(10, 1 / pd.uncertainty));
+            totWeight += w;
+            ret += pd.getElo() * w;
         }
-        return ret / blackDays.size();
+        return ret / totWeight;
+    }
+    
+    public  double getPlayerWeight(Player p){
+        if (whiteDays.containsKey(p)){
+            getWhiteElo();
+            return Math.max(0.1, Math.min(10, 1 / whiteDays.get(p).uncertainty)) / totWeight;
+        }
+            getBlackElo();
+        return Math.max(0.1, Math.min(10, 1 / blackDays.get(p).uncertainty))/ totWeight;
     }
     
     

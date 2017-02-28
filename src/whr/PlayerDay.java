@@ -49,7 +49,7 @@ public class PlayerDay {
             won_game_terms = new ArrayList();
             for (Game g : wonGames) {
                 double other_gamma = g.getOpponentsAdjustedGamma(player);
-                won_game_terms.add(new double[]{1.0, 0.0, 1.0, other_gamma, 1d / (g.getPlayerTeammates(player).size()) });
+                won_game_terms.add(new double[]{1.0, 0.0, 1.0, other_gamma, 1d / g.getPlayerTeammates(player).size()/*g.getPlayerWeight(player)*/ });
             }
             if (isFirstDay) {
                 won_game_terms.add(new double[]{1, 0, 1, 1, 1});
@@ -63,7 +63,7 @@ public class PlayerDay {
             lost_game_terms = new ArrayList();
             for (Game g : lostGames) {
                 double other_gamma = g.getOpponentsAdjustedGamma(player);
-                lost_game_terms.add(new double[]{0.0, other_gamma, 1.0, other_gamma, 1d / (g.getPlayerTeammates(player).size()) });
+                lost_game_terms.add(new double[]{0.0, other_gamma, 1.0, other_gamma, 1d / g.getPlayerTeammates(player).size()/*g.getPlayerWeight(player)*/ });
             }
             if (isFirstDay) {
                 lost_game_terms.add(new double[]{0, 1, 1, 1, 1});

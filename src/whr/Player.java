@@ -17,30 +17,6 @@ public class Player {
         this.w2 = Math.pow(Math.sqrt(w2) * Math.log(10) / 400, 2);  // Convert from elo^2 to r^2
 
     }
-
-    public double getLogLikelihood() {
-        double sum = 0.0;
-        List<Double> sigma2 = generateSigma2();
-        double n = days.size();
-        for (int i = 0; i < n; i++) {
-            double prior = 0;
-            double rd;
-            if (i < (n - 1)) {
-                rd = days.get(i).r - days.get(i + 1).r;
-                prior += (1 / (Math.sqrt(2 * Math.PI * sigma2.get(i)))) * Math.exp(-Math.pow(rd, 2) / 2 * sigma2.get(i));
-            }
-            if (i > 0) {
-                rd = days.get(i).r - days.get(i - 1).r;
-                prior += (1 / (Math.sqrt(2 * Math.PI * sigma2.get(i - 1)))) * Math.exp(-Math.pow(rd, 2) / 2 * sigma2.get(i - 1));
-            }
-            if (prior == 0) {
-                sum += days.get(i).getLogLikelyhood();
-            } else {
-                sum += days.get(i).getLogLikelyhood() + Math.log(prior);
-            }
-        }
-        return sum;
-    }
     
     double[][] __m = new double[100][100];
 
@@ -175,7 +151,6 @@ public class Player {
                 _maxChg = Math.abs(x.get(i));
                 System.out.println("New max change of " + _maxChg + " for player " + id);
             }
-            
         }
 
         for (int i = 0; i < days.size(); i++) {
@@ -262,8 +237,10 @@ public class Player {
             if (days.isEmpty()) {
                 newPDay.isFirstDay = true;
                 newPDay.setGamma(1);
+                newPDay.uncertainty = 10;
             } else {
                 newPDay.setGamma(days.get(days.size() - 1).getGamma());
+                newPDay.uncertainty = days.get(days.size() - 1).uncertainty + Math.sqrt(game.day - days.get(days.size() - 1).day) * w2;
             }
             days.add(newPDay);
         }
