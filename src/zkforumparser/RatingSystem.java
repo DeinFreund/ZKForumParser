@@ -4,12 +4,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface RatingSystem {
+public abstract class RatingSystem {
     
-    public void init(Collection<Integer> playerIds);
+    public abstract void init(Collection<Integer> playerIds);
     
-    public void evaluateResult(Collection<Collection<Integer>> winners, Collection<Collection<Integer>> losers);
+    protected abstract void evaluateResult(Collection<Collection<Integer>> winners, Collection<Collection<Integer>> losers);
     
-    public List<Double> predictResult(List<Collection<Integer> > teams);
+    protected void evaluateResult(Collection<Collection<Integer>> winners, Collection<Collection<Integer>> losers, int date){
+        evaluateResult(winners, losers);
+    }
+    
+    public abstract List<Double> predictResult(List<Collection<Integer> > teams);
+    
+    public List<Double> predictResult(List<Collection<Integer> > teams, int date){
+        return predictResult(teams);
+    }
     
 }

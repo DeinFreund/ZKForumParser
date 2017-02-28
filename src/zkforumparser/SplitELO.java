@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
  *
  * @author User
  */
-public class SplitELO implements RatingSystem {
+public class SplitELO extends RatingSystem {
 
     WeightChangingELO low, high;
     int sep;

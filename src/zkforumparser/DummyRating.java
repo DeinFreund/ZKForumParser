@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  *
  * @author User
  */
-public class DummyRating implements RatingSystem {
+public class DummyRating extends RatingSystem {
 
     @Override
     public void init(Collection<Integer> playerIds) {

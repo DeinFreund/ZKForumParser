@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
  *
  * @author User
  */
-public class LinearMixedELO implements RatingSystem {
+public class LinearMixedELO extends RatingSystem {
 
     List<WeightChangingELO> elos = new ArrayList();
     List<Integer> eloPoints;

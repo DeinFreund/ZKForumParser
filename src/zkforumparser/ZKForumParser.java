@@ -13,11 +13,15 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -148,6 +152,20 @@ public class ZKForumParser {
                 if (line.trim().equalsIgnoreCase("<div class=\"fleft\" style=\"padding: 5px;\">")) {
                     paramIndex = 0;
                 }
+                if (line.trim().startsWith("<a href='/replays/")) {
+
+                    int startIndex = -1;
+                    Pattern pattern = Pattern.compile( "\\d{8}_\\d{6}");
+                    Matcher matcher = pattern.matcher(line);
+                    if (matcher.find()) {
+                        startIndex = matcher.start();
+                    }
+                    String strDate = line.substring(startIndex, startIndex + 8 + 1 + 6);
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    Date date = sdf.parse(strDate);
+                    ago = (System.currentTimeMillis() - date.getTime()) / 1000 + " seconds";
+                }
                 if (paramIndex >= 0 && line.trim().equalsIgnoreCase("<tr>")) {
                     String a = html.get(index + 2).trim();
                     String b = html.get(index + 4).trim().substring(4);
@@ -155,11 +173,12 @@ public class ZKForumParser {
                         case "Title:":
                             title = b;
                             break;
-                        case "Started:":
-                            ago = b.substring(0, b.length() - 4);
-                            break;
                         case "Host:":
-                            host = b.substring(b.lastIndexOf("'>") + 2, b.lastIndexOf("</a>"));
+                            if (b.contains("Nobody")) {
+                                host = "";
+                            } else {
+                                host = b.substring(b.lastIndexOf("'>") + 2, b.lastIndexOf("</a>"));
+                            }
                             break;
                         case "Game version:":
                             game = b;
@@ -196,8 +215,8 @@ public class ZKForumParser {
                         if (l.contains("class='flag' ")) {
                             team += ";" + l.substring(l.lastIndexOf("$user$") + 6, l.lastIndexOf("'"));
                         }
-                        if (l.contains("{redacted}")){
-                            team += ";0"; 
+                        if (l.contains("{redacted}")) {
+                            team += ";0";
                         }
                         if (l.contains("$clan$")) {
                             while (count(team.substring(team.lastIndexOf(";")), "/") < 0) {
@@ -209,7 +228,11 @@ public class ZKForumParser {
                             while (count(team.substring(team.lastIndexOf(";")), "/") < 1) {
                                 team += "/";
                             }
-                            team += "/" + l.substring(l.lastIndexOf("in ") + 3, l.indexOf("<")).trim();
+                            String t = l;
+                            if (t.contains("Awards")) {
+                                t = t.substring(0, t.indexOf("Awards"));
+                            }
+                            team += "/" + t.substring(t.lastIndexOf("in ") + 3, (t.contains("<") ? t.indexOf("<") : t.indexOf("Elo"))).trim();
                         }
 
                         if (l.contains("/img/Awards")) {
@@ -241,7 +264,6 @@ public class ZKForumParser {
             }
             boolean down = false;
 
-            System.err.println("parsed " + battleId);
             //return post;
         } catch (Exception e) {
             StringWriter sw = new StringWriter();
@@ -266,6 +288,10 @@ public class ZKForumParser {
                 losers += "#" + losingTeams.get(i);
             }
         }
+        /*if (!title.contains("MatchMaker")) {
+            return "";
+        }*/
+        System.err.println("parsed " + battleId);
         return battleId + "|" + title + "|" + host + "|" + map + "|" + ago + "|" + duration + "|" + game + "|" + engine + "|" + bots + "|" + mission
                 + "|" + winners + "|" + losers + "|" + firstCommenter + "\n";
     }
@@ -319,7 +345,8 @@ public class ZKForumParser {
 //            writefile(entry.getValue());
 //            if (entry.getKey() % 100 == 0)System.out.println("written " + entry.getKey());
 //        }
-        List<String> file = Files.readAllLines(Paths.get("battles.txt"));
+        List<String> file = new ArrayList();
+        file = Files.readAllLines(Paths.get("A:\\battles2.txt"));
         /*System.out.println(parseBattle(428849));
         if (true) {
             return;
@@ -328,7 +355,9 @@ public class ZKForumParser {
             int postId = Integer.valueOf(line.split("\\|")[0]);
             data.put(postId, line + '\n');
         }
-        for (int index = 1; index < 430000; index++) {
+        System.out.println("Read " + data.size() + " battles");
+        parseBattle(430440);
+        for (int index = 447000; index < 450000; index++) {
             if (data.containsKey(index)) {
                 continue;
             }

@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
  *
  * @author User
  */
-public class InterpolatedELO implements RatingSystem {
+public class InterpolatedELO extends RatingSystem {
 
     WeightChangingELO low, high;
     int sep;
