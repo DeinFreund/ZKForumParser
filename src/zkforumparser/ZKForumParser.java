@@ -288,9 +288,9 @@ public class ZKForumParser {
                 losers += "#" + losingTeams.get(i);
             }
         }
-        /*if (!title.contains("MatchMaker")) {
+        if (!title.contains("MatchMaker")) {
             return "";
-        }*/
+        }//*/
         System.err.println("parsed " + battleId);
         return battleId + "|" + title + "|" + host + "|" + map + "|" + ago + "|" + duration + "|" + game + "|" + engine + "|" + bots + "|" + mission
                 + "|" + winners + "|" + losers + "|" + firstCommenter + "\n";
@@ -346,7 +346,7 @@ public class ZKForumParser {
 //            if (entry.getKey() % 100 == 0)System.out.println("written " + entry.getKey());
 //        }
         List<String> file = new ArrayList();
-        file = Files.readAllLines(Paths.get("A:\\battles2.txt"));
+        //file = Files.readAllLines(Paths.get("battles.txt"));
         /*System.out.println(parseBattle(428849));
         if (true) {
             return;
@@ -357,7 +357,10 @@ public class ZKForumParser {
         }
         System.out.println("Read " + data.size() + " battles");
         parseBattle(430440);
-        for (int index = 447000; index < 450000; index++) {
+        for (int index = 425000; index < 450000; index++) {
+            if (index % 1000 == 0){
+                System.out.println(index);
+            }
             if (data.containsKey(index)) {
                 continue;
             }
@@ -373,7 +376,7 @@ public class ZKForumParser {
                 }
 
             }).start();
-            Thread.sleep(20);
+            Thread.sleep(60);
         }
         Thread.sleep(2000);
         for (Map.Entry<Integer, String> entry : data.entrySet()) {

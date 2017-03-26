@@ -273,7 +273,7 @@ public class StatsBattles {
         long time = System.currentTimeMillis();
 
         Map<Integer, Battle> battles = new TreeMap();
-        Files.readAllLines(Paths.get("battles.txt")).stream().limit(100000).map((line) -> new Battle(line)).filter(b -> b.id < 1000000).forEach((b) -> {
+        Files.readAllLines(Paths.get("battles.txt")).stream().limit(1500000).map((line) -> new Battle(line)).filter(b -> b.id < 1000000).forEach((b) -> {
             battles.put(b.id, b);
             if (b.id - last >= 10000){
             System.out.println(b.id);
@@ -939,6 +939,9 @@ public class StatsBattles {
         smallTeamsRating.init(players);
         ELO bigTeamsRating = new ELO(32);
         bigTeamsRating.init(players);
+        Map<String, Integer> mapPlays = new HashMap();
+        Map<String, RatingSystem> mapRatingSystems = new HashMap();
+        Map<String, Double> mapRatingScore = new HashMap();
         Map<Integer, Double> trackedWins = new HashMap();
         for (Integer p : trackedPlayers) {
             System.out.print(";" + getUserName(p));
@@ -950,10 +953,10 @@ public class StatsBattles {
         Set<Integer> activePlayers = new HashSet();
         Set<Integer> uniquePlayers = new HashSet();
         int ffa = 0;
-        int games = 0;
-        /*for (Battle b : battles.values()) {
+        int games = 0;/*
+        for (Battle b : battles.values()) {
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
-                    || b.winners.get(0).players.size() < 2 || b.losers.get(0).players.size() < 2
+                    || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
                     || b.winners.get(0).players.size() > 20 || b.losers.get(0).players.size() > 20
                     || b.winners.get(0).players.size() !=  b.losers.get(0).players.size())
                     && !b.isFunMap()) {//
@@ -961,7 +964,7 @@ public class StatsBattles {
                 int date = (int)(System.currentTimeMillis()/1000 - b.ago) / 86400;
                 whr.evaluateResult(b.winnerPlayers, b.loserPlayers, date);
             }
-        }*/
+        }//*/
         for (Battle b : battles.values()) {
 /*
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
@@ -974,26 +977,39 @@ public class StatsBattles {
             /*
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.isEmpty() || b.losers.isEmpty()
                     || b.losers.size() < 2) && !b.isFunMap()) {
-            //*/
-            
+            */
+            /*
+            if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.isEmpty()
+                    ) && !b.isFunMap()) {//*/
+                ///*
             if (!(b.bots || b.mission || b.duration < 120 || b.winners.size() != 1 || b.losers.size() != 1
                     || b.winners.get(0).players.size() < 1 || b.losers.get(0).players.size() < 1
-                    || b.winners.get(0).players.size() > 20 || b.losers.get(0).players.size() > 20
-                    //|| b.winners.get(0).players.size() !=  b.losers.get(0).players.size()
-                    ) && !b.isFunMap()) {//
+                    || b.winners.get(0).players.size() > 3 || b.losers.get(0).players.size() > 3
+                    || b.winners.get(0).players.size() !=  b.losers.get(0).players.size()
+                    ) /*&& !b.isFunMap()*/) {//*/
                 
 
                 games ++;
                 if (games % 1000 ==0) System.out.println(games + " | " + uniquePlayers.size());
-                //int date = (int)(System.currentTimeMillis()/1000 - b.ago) / 86400;
+                //int date =  (int)(2 * System.currentTimeMillis()/1000 - b.ago) / 86400;
                 int date = b.id / 200;
                 //smallTeamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers, date);
                 //teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
+                if (!mapPlays.containsKey(b.map)){
+                    mapPlays.put(b.map, 0);
+                    mapRatingScore.put(b.map, 0d);
+                    mapRatingSystems.put(b.map, new WHR());
+                    mapRatingSystems.get(b.map).init(players);
+                }
+                mapPlays.put(b.map, mapPlays.get(b.map) + b.teams.size());
 
                 ratingMaxScore++;
                 double scoreMul = 1d / b.teams.size();
 
                 for (RatingSystem rs : ratingNames.keySet()) {
+                    if (rs instanceof WHR){
+                        //rs = mapRatingSystems.get(b.map);
+                    }
                     List<Collection<Integer>> players = new ArrayList();
                     for (int i = 0; i < b.teams.size(); i++) {
                         players.add(new ArrayList());
@@ -1005,13 +1021,19 @@ public class StatsBattles {
                     //List<Double> pred = rs.predictResult(b.teams.stream().map(t -> t.players.stream().map(p -> p.id).collect(Collectors.toList())).collect(Collectors.toList()));
                     List<Double> pred = rs.predictResult(players, date);
 
-                    double score = ratingScores.get(rs);
+                    double score = 0;
                     for (int i = 0; i < b.teams.size(); i++) {
                         score += scoreMul * (b.winners.contains(b.teams.get(i)) ? (1 + Math.log(pred.get(i)) / Math.log(2)) : (1 + Math.log(1 - pred.get(i)) / Math.log(2)));
                     }
-                    if (players.size() == 2)ratingScores.put(rs, score);
-                    if (players.size() == 2 && pred.get(0) + 0.00001 > pred.get(1) && b.winners.contains(b.teams.get(0)))ratingCorrect.put(rs, ratingCorrect.get(rs) + 1);
-                    if (players.size() == 2 && pred.get(1) > pred.get(0) + 0.00001 && b.winners.contains(b.teams.get(1)))ratingCorrect.put(rs, ratingCorrect.get(rs) + 1);
+                    if (rs instanceof WHR ){
+                        if (mapPlays.get(b.map) > 200)
+                        mapRatingScore.put(b.map, mapRatingScore.get(b.map) + score);
+                    }else{
+                        score += ratingScores.get(rs);
+                        ratingScores.put(rs, score);
+                        if (pred.get(0) + 0.00001 > pred.get(1) && b.winners.contains(b.teams.get(0)))ratingCorrect.put(rs, ratingCorrect.get(rs) + 1);
+                        if (pred.get(1) > pred.get(0) + 0.00001 && b.winners.contains(b.teams.get(1)))ratingCorrect.put(rs, ratingCorrect.get(rs) + 1);
+                    }
 
                     rs.evaluateResult(b.winnerPlayers, b.loserPlayers, date);
                 }
@@ -1090,7 +1112,7 @@ public class StatsBattles {
                 teamsRating.evaluateResult(b.winnerPlayers, b.loserPlayers);
 
             }*/
-        }System.out.println(games + " games played");
+        }System.out.println(games + " games played " + uniquePlayers.size());
         double avg = 0;
 
         double minElo = Integer.MAX_VALUE;
@@ -1132,6 +1154,16 @@ public class StatsBattles {
         }
         System.out.println("Average ELO: " + avg / count);*/
 
+        TreeMap<Double, String> bestMaps = new TreeMap<>();
+        for (String map : mapPlays.keySet()){
+            if (mapPlays.get(map) > 2000)
+            bestMaps.put(-mapRatingScore.get(map) / mapPlays.get(map), map);
+        }
+        int rank = 1;
+        for (Map.Entry<Double, String> e : bestMaps.entrySet()){
+            System.out.println(rank++ + ". " + e.getValue() + " (" + (mapPlays.get(e.getValue()) / 2) + " games played): " + (0.001*Math.round(-e.getKey() * 1000) + 1e-6 + "").substring(0, 5));
+        }
+        
         final int norm = ratingMaxScore;
         ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (ratingScores.get(rs) / norm)));
         ratingNames.keySet().forEach(rs -> System.out.println(ratingNames.get(rs) + ": " + (100 * ratingCorrect.get(rs) / norm)));

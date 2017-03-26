@@ -15,16 +15,15 @@ public class Player {
     public Player(int id, double w2) {
         this.id = id;
         this.w2 = Math.pow(Math.sqrt(w2) * Math.log(10) / 400, 2);  // Convert from elo^2 to r^2
-
     }
     
-    double[][] __m = new double[100][100];
+    double[][] __m = new double[10][10];
 
     public double[][] generateHessian(List<PlayerDay> days, List<Double> sigma2) {
 
         int n = days.size();
         if (__m.length < n+1){
-            __m = new double[n+100][n+100];
+            __m = new double[n+10][n+10];
         }
         double[][] m = __m;
         for (int row = 0; row < n; row++) {
@@ -160,7 +159,7 @@ public class Player {
     }    
     static double _maxChg = 3;
     
-    double[][] __cov = new double[100][100];
+    double[][] __cov = new double[10][10];
 
     public double[][] generateCovariance() {
         List<Double> r = new ArrayList();
@@ -204,7 +203,7 @@ public class Player {
         v.set(n - 1, -1 / d.get(n - 1));
 
         if (__cov.length < n+1){
-            __cov = new double[n+100][n+100];
+            __cov = new double[n+10][n+10];
         }
         double[][] cov = __cov;
 

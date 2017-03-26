@@ -22,6 +22,8 @@ public class Game {
     }
     
     private double totWeight;
+    
+    
     private double getWhiteElo(){
         double ret = 0;
         double w; totWeight = 0;
@@ -125,6 +127,10 @@ public class Game {
     }
 
     public double getBlackWinProbability() {
+        if (whiteDays.isEmpty() || blackDays.isEmpty()){
+            whitePlayers.forEach(p -> p.fakeGame(this));
+            blackPlayers.forEach(p -> p.fakeGame(this));
+        }
         return getBlackGamma() / (getBlackGamma() + getWhiteGamma());
     }
 }
